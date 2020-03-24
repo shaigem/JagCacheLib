@@ -3,7 +3,7 @@ using System.IO;
 
 namespace JagCacheLib
 {
-    public readonly struct Index
+    public class Index
     {
         public const byte Size = 6;
         
