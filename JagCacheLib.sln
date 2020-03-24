@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JagCacheLib", "JagCacheLib\JagCacheLib.csproj", "{F7DD7485-B728-45FA-973F-B62934C15D50}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JagCacheLibTests", "JagCacheLibTests\JagCacheLibTests.csproj", "{89EC998C-9342-4DAA-84B8-6C3D17E9CD08}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{F7DD7485-B728-45FA-973F-B62934C15D50}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F7DD7485-B728-45FA-973F-B62934C15D50}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F7DD7485-B728-45FA-973F-B62934C15D50}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89EC998C-9342-4DAA-84B8-6C3D17E9CD08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89EC998C-9342-4DAA-84B8-6C3D17E9CD08}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89EC998C-9342-4DAA-84B8-6C3D17E9CD08}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89EC998C-9342-4DAA-84B8-6C3D17E9CD08}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
