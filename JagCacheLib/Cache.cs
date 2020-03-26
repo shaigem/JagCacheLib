@@ -118,16 +118,18 @@ namespace JagCacheLib
             {
                 _mainDataFileStream.Seek(block * TotalBlockSize, SeekOrigin.Begin);
                 _mainDataFileStream.Read(blockData, 0, blockData.Length);
-                Array.Copy(blockData, headerData, headerData.Length);
+                for (int i = 0; i < headerData.Length; i++)
+                {
+                    headerData[i] = blockData[i];
+                }
                 var (nextEntryId, nextSequence, nextBlock, nextIndexId) =
                     new Header(headerData, large);
                 var chunksConsumed = Math.Min(remainingBytes, blockChunkSize);
-                var totalConsumed = chunksConsumed + blockHeaderSize;
 
                 if (remainingBytes > 0)
                 {
                     // TODO error checking
-                    Array.Copy(blockData, blockHeaderSize, data, read, chunksConsumed);
+                    Buffer.BlockCopy(blockData, blockHeaderSize, data, read, chunksConsumed);
                     read += chunksConsumed;
                     remainingBytes -= chunksConsumed;
                     block = nextBlock;
