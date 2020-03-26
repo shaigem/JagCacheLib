@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -112,7 +112,7 @@ namespace JagCacheLib
             var blockData = new byte[TotalBlockSize];
             var headerData = new byte[blockHeaderSize];
 
-            var read = 0;
+            var dataReadIndex = 0;
 
             while (remainingBytes > 0)
             {
@@ -129,8 +129,8 @@ namespace JagCacheLib
                 if (remainingBytes > 0)
                 {
                     // TODO error checking
-                    Buffer.BlockCopy(blockData, blockHeaderSize, data, read, chunksConsumed);
-                    read += chunksConsumed;
+                    Array.Copy(blockData, blockHeaderSize, data, dataReadIndex, chunksConsumed);
+                    dataReadIndex += chunksConsumed;
                     remainingBytes -= chunksConsumed;
                     block = nextBlock;
                     currentSequence += 1;
