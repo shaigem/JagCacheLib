@@ -108,29 +108,34 @@ namespace JagCacheLib
             int blockHeaderSize = large ? BlockHeaderExtendedSize : BlockHeaderSize;
             int blockChunkSize = large ? BlockChunkExtendedSize : BlockChunkSize;
 
-            var data = new List<byte>(indexEntry.Size);
+            var data = new byte[indexEntry.Size];
+            var blockData = new byte[TotalBlockSize];
+            var headerData = new byte[blockHeaderSize];
+
+            var read = 0;
 
             while (remainingBytes > 0)
             {
-                var blockData = new byte[TotalBlockSize];
                 _mainDataFileStream.Seek(block * TotalBlockSize, SeekOrigin.Begin);
                 _mainDataFileStream.Read(blockData, 0, blockData.Length);
+                Array.Copy(blockData, headerData, headerData.Length);
                 var (nextEntryId, nextSequence, nextBlock, nextIndexId) =
-                    new Header(blockData[..blockHeaderSize], large);
+                    new Header(headerData, large);
                 var chunksConsumed = Math.Min(remainingBytes, blockChunkSize);
                 var totalConsumed = chunksConsumed + blockHeaderSize;
 
                 if (remainingBytes > 0)
                 {
                     // TODO error checking
-                    data.AddRange(blockData[blockHeaderSize..totalConsumed]);
+                    Array.Copy(blockData, blockHeaderSize, data, read, chunksConsumed);
+                    read += chunksConsumed;
                     remainingBytes -= chunksConsumed;
                     block = nextBlock;
                     currentSequence += 1;
                 }
             }
 
-            return data.ToArray();
+            return data;
         }
 
 
