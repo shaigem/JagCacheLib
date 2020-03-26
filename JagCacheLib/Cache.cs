@@ -1,4 +1,4 @@
-﻿﻿﻿using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -122,6 +122,7 @@ namespace JagCacheLib
                 {
                     headerData[i] = blockData[i];
                 }
+
                 var (nextEntryId, nextSequence, nextBlock, nextIndexId) =
                     new Header(headerData, large);
                 var chunksConsumed = Math.Min(remainingBytes, blockChunkSize);
@@ -140,11 +141,9 @@ namespace JagCacheLib
             return data;
         }
 
-
         public Index GetIndex(int type) => _indices.TryGetValue(type, out var index)
             ? index
             : throw new KeyNotFoundException($"Given index {type} was not found.");
-
 
         public void Dispose()
         {
