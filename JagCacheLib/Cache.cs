@@ -141,9 +141,10 @@ namespace JagCacheLib
         }
 
 
-        public Index GetIndex(int type) => !_indices.ContainsKey(type)
-            ? throw new KeyNotFoundException($"Given index {type} was not found.")
-            : _indices[type];
+        public Index GetIndex(int type) => _indices.TryGetValue(type, out var index)
+            ? index
+            : throw new KeyNotFoundException($"Given index {type} was not found.");
+
 
         public void Dispose()
         {
