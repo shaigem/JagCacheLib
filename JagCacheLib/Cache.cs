@@ -96,12 +96,6 @@ namespace JagCacheLib
             static FileStream OpenFile(string path) => File.Open(path, FileMode.Open, FileAccess.ReadWrite);
         }
 
-        public Archive GetArchive(int id)
-        {
-            var data = Read(Index.Archive, id);
-            return new Archive(data);
-        }
-
         public byte[] Read(int type, int file)
         {
             var index = GetIndex(type);
@@ -122,28 +116,34 @@ namespace JagCacheLib
 
             while (remainingBytes > 0)
             {
+                if (remainingBytes <= 0) continue;
                 _mainDataFileStream.Seek(block * TotalBlockSize, SeekOrigin.Begin);
                 _mainDataFileStream.Read(blockData, 0, blockData.Length);
                 for (int i = 0; i < headerData.Length; i++)
                 {
                     headerData[i] = blockData[i];
                 }
-
                 var (nextEntryId, nextSequence, nextBlock, nextIndexId) =
                     new Header(headerData, large);
-                var chunksConsumed = Math.Min(remainingBytes, blockChunkSize);
-
-                if (remainingBytes > 0)
+                if (nextEntryId != file)
                 {
-                    // TODO error checking
-                    Array.Copy(blockData, blockHeaderSize, data, dataReadIndex, chunksConsumed);
-                    dataReadIndex += chunksConsumed;
-                    remainingBytes -= chunksConsumed;
-                    block = nextBlock;
-                    currentSequence += 1;
+                    throw new Exception($"Sector data mismatch. Next entry id should be {file}.");
                 }
+                if (nextSequence != currentSequence)
+                {
+                    throw new Exception($"Sector data mismatch. Next sequence should be {currentSequence}.");
+                }
+                if (nextIndexId != type + 1)
+                {
+                    throw new Exception($"Sector data mismatch. Next index id should be {type + 1}.");
+                }
+                var chunksConsumed = Math.Min(remainingBytes, blockChunkSize);
+                Array.Copy(blockData, blockHeaderSize, data, dataReadIndex, chunksConsumed);
+                dataReadIndex += chunksConsumed;
+                remainingBytes -= chunksConsumed;
+                block = nextBlock;
+                currentSequence += 1;
             }
-
             return data;
         }
 
