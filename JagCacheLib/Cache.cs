@@ -21,7 +21,7 @@ namespace JagCacheLib
         private const ushort TotalBlockSize = 520;
 
         private readonly FileStream _mainDataFileStream;
-        private readonly Dictionary<int, Index> _indices;
+        private readonly Index?[] _indices;
 
         private readonly struct Header
         {
@@ -80,7 +80,7 @@ namespace JagCacheLib
             }
 
             _mainDataFileStream = OpenFile(mainDataPath);
-            _indices = new Dictionary<int, Index>(MaxIndexCount);
+            _indices = new Index[MaxIndexCount];
             for (var id = 0; id < MaxIndexCount; id++)
             {
                 var indexPath = Path.Combine(path, $"{IndexFilePrefixName}{id}");
@@ -94,6 +94,12 @@ namespace JagCacheLib
 
             // TODO provide custom fileaccess and filemode
             static FileStream OpenFile(string path) => File.Open(path, FileMode.Open, FileAccess.ReadWrite);
+        }
+
+        public Archive GetArchive(int id)
+        {
+            var data = Read(Index.Archive, id);
+            return new Archive(data);
         }
 
         public byte[] Read(int type, int file)
@@ -141,16 +147,15 @@ namespace JagCacheLib
             return data;
         }
 
-        public Index GetIndex(int type) => _indices.TryGetValue(type, out var index)
-            ? index
-            : throw new KeyNotFoundException($"Given index {type} was not found.");
+        public Index GetIndex(int type) =>
+            _indices[type] ?? throw new KeyNotFoundException($"Given index {type} was not found.");
 
         public void Dispose()
         {
             _mainDataFileStream.Dispose();
-            foreach (var (_, index) in _indices)
+            foreach (var index in _indices)
             {
-                index.Dispose();
+                index?.Dispose();
             }
         }
     }
