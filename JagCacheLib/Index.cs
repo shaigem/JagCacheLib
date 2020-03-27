@@ -16,13 +16,15 @@ namespace JagCacheLib
         public int Id { get; }
         public int Size { get; }
         public int Offset { get; }
-        
+
         public override string ToString() =>
             $"Index Entry[id: {Id}, size: {Size}, offset: {Offset}]";
     }
 
     public class Index : IDisposable
     {
+        public const byte Archive = 0;
+
         public const byte Size = 6;
 
         public double Id { get; }
