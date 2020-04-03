@@ -23,8 +23,6 @@ namespace JagCacheLib
 
     public class Index : IDisposable
     {
-        public const byte Archive = 0;
-
         public const byte Size = 6;
 
         private static readonly byte[] Buffer = new byte[Size];
