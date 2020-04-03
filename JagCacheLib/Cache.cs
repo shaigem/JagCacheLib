@@ -8,9 +8,8 @@ namespace JagCacheLib
 {
     public class Cache : IDisposable
     {
-        private const string DataFileName = "main_file_cache.dat";
+        private const string DataFileName = "main_file_cache.dat2";
         private const string IndexFilePrefixName = "main_file_cache.idx";
-        private const byte MaxIndexCount = 255;
 
         private const byte BlockHeaderSize = 8;
         private const byte BlockHeaderExtendedSize = 10;
@@ -21,6 +20,8 @@ namespace JagCacheLib
         private const ushort TotalBlockSize = 520;
 
         private readonly FileStream _mainDataFileStream;
+
+        private readonly Index _mainDescriptorIndex;
         private readonly Index?[] _indices;
 
         private readonly struct Header
@@ -73,6 +74,8 @@ namespace JagCacheLib
 
         public Cache(string path)
         {
+            // TODO better exception handling
+
             var mainDataPath = Path.Combine(path, DataFileName);
             if (!File.Exists(mainDataPath))
             {
@@ -80,8 +83,18 @@ namespace JagCacheLib
             }
 
             _mainDataFileStream = OpenFile(mainDataPath);
-            _indices = new Index[MaxIndexCount];
-            for (var id = 0; id < MaxIndexCount; id++)
+
+            var mainDescriptorIndexPath = Path.Combine(path, $"{IndexFilePrefixName}255");
+            if (!File.Exists(mainDescriptorIndexPath))
+            {
+                throw new FileNotFoundException($"{mainDescriptorIndexPath} cannot be found.");
+            }
+
+            _mainDescriptorIndex = new Index(255, OpenFile(mainDescriptorIndexPath));
+
+            var indexCount = _mainDescriptorIndex.GetFileCount();
+            _indices = new Index[indexCount];
+            for (var id = 0; id < indexCount; id++)
             {
                 var indexPath = Path.Combine(path, $"{IndexFilePrefixName}{id}");
                 if (File.Exists(indexPath) && !Directory.Exists(indexPath))
@@ -123,20 +136,24 @@ namespace JagCacheLib
                 {
                     headerData[i] = blockData[i];
                 }
+
                 var (nextEntryId, nextSequence, nextBlock, nextIndexId) =
                     new Header(headerData, large);
                 if (nextEntryId != file)
                 {
                     throw new Exception($"Sector data mismatch. Next entry id should be {file}.");
                 }
+
                 if (nextSequence != currentSequence)
                 {
                     throw new Exception($"Sector data mismatch. Next sequence should be {currentSequence}.");
                 }
+
                 if (nextIndexId != type + 1)
                 {
                     throw new Exception($"Sector data mismatch. Next index id should be {type + 1}.");
                 }
+
                 var chunksConsumed = Math.Min(remainingBytes, blockChunkSize);
                 Array.Copy(blockData, blockHeaderSize, data, dataReadIndex, chunksConsumed);
                 dataReadIndex += chunksConsumed;
@@ -144,6 +161,7 @@ namespace JagCacheLib
                 block = nextBlock;
                 currentSequence += 1;
             }
+
             return data;
         }
 
@@ -153,6 +171,7 @@ namespace JagCacheLib
         public void Dispose()
         {
             _mainDataFileStream.Dispose();
+            _mainDescriptorIndex.Dispose();
             foreach (var index in _indices)
             {
                 index?.Dispose();
