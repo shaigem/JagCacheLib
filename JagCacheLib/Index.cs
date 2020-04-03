@@ -25,11 +25,10 @@ namespace JagCacheLib
     {
         public const byte Size = 6;
 
-        private static readonly byte[] Buffer = new byte[Size];
-
         public double Id { get; }
-
         public FileStream IndexFileStream { get; }
+
+        private static readonly byte[] Buffer = new byte[Size];
 
         public Index(int id, FileStream indexFileStream) => (Id, IndexFileStream) = (id, indexFileStream);
 
