@@ -4,7 +4,7 @@ using System.IO;
 
 namespace JagCacheLib
 {
-    public readonly struct IndexEntry
+    public readonly ref struct IndexEntry
     {
         public IndexEntry(int id, int size, int offset)
         {

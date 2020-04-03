@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -27,7 +28,7 @@ namespace JagCacheLib
         private static readonly byte[] BlockBuffer = new byte[TotalBlockSize];
         private static ReadOnlySpan<byte> BlockBufferSpan => BlockBuffer;
 
-        private readonly struct BlockHeader
+        private readonly ref struct BlockHeader
         {
             public BlockHeader(ReadOnlySpan<byte> data, bool large)
             {
@@ -124,7 +125,7 @@ namespace JagCacheLib
             int blockHeaderSize = large ? BlockHeaderExtendedSize : BlockHeaderSize;
             int blockChunkSize = large ? BlockChunkExtendedSize : BlockChunkSize;
 
-            var data = new byte[indexEntry.Size];
+            var dataBufferSpan = new Span<byte>(new byte[indexEntry.Size]);
 
             var dataReadIndex = 0;
 
@@ -163,18 +164,19 @@ namespace JagCacheLib
                 }
 
                 var chunksConsumed = Math.Min(remainingBytes, blockChunkSize);
-                Array.Copy(BlockBuffer, blockHeaderSize, data, dataReadIndex, chunksConsumed);
+                BlockBufferSpan.Slice(blockHeaderSize, chunksConsumed).CopyTo(dataBufferSpan.Slice(dataReadIndex));
                 dataReadIndex += chunksConsumed;
                 remainingBytes -= chunksConsumed;
                 block = nextBlock;
                 currentSequence += 1;
             }
 
-            return data;
+            return dataBufferSpan;
         }
 
-        public Index GetIndex(int type) =>
-            _indices[type] ?? throw new KeyNotFoundException($"Given index {type} was not found.");
+        public Index GetIndex(int type) => type == 255
+            ? _mainDescriptorIndex
+            : _indices[type] ?? throw new KeyNotFoundException($"Given index {type} was not found.");
 
         public void Dispose()
         {
