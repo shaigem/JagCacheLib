@@ -24,9 +24,12 @@ namespace JagCacheLib
         private readonly Index _mainDescriptorIndex;
         private readonly Index?[] _indices;
 
+        private static readonly byte[] BlockBuffer = new byte[TotalBlockSize];
+        private static ReadOnlySpan<byte> BlockBufferSpan => BlockBuffer;
+
         private readonly struct BlockHeader
         {
-            public BlockHeader(byte[] data, bool large)
+            public BlockHeader(ReadOnlySpan<byte> data, bool large)
             {
                 if (data.Length == 0)
                 {
@@ -109,7 +112,7 @@ namespace JagCacheLib
             static FileStream OpenFile(string path) => File.Open(path, FileMode.Open, FileAccess.ReadWrite);
         }
 
-        public byte[] Read(int type, int file)
+        public ReadOnlySpan<byte> Read(int type, int file)
         {
             var index = GetIndex(type);
             var indexEntry = index.GetEntry(file);
@@ -122,23 +125,17 @@ namespace JagCacheLib
             int blockChunkSize = large ? BlockChunkExtendedSize : BlockChunkSize;
 
             var data = new byte[indexEntry.Size];
-            var blockData = new byte[TotalBlockSize];
-            var headerData = new byte[blockHeaderSize];
 
             var dataReadIndex = 0;
 
             while (remainingBytes > 0)
             {
                 if (remainingBytes <= 0) continue;
-                _mainDataFileStream.Seek(block * TotalBlockSize, SeekOrigin.Begin);
-                _mainDataFileStream.Read(blockData, 0, blockData.Length);
-                for (int i = 0; i < headerData.Length; i++)
-                {
-                    headerData[i] = blockData[i];
-                }
 
+                _mainDataFileStream.Seek(block * TotalBlockSize, SeekOrigin.Begin);
+                _mainDataFileStream.Read(BlockBuffer);
                 var (nextEntryId, nextSequence, nextBlock, nextIndexId) =
-                    new BlockHeader(headerData, large);
+                    new BlockHeader(BlockBufferSpan.Slice(0, blockHeaderSize), large);
                 if (nextEntryId != file)
                 {
                     throw new Exception($"Sector data mismatch. Next entry id should be {file}.");
@@ -155,7 +152,7 @@ namespace JagCacheLib
                 }
 
                 var chunksConsumed = Math.Min(remainingBytes, blockChunkSize);
-                Array.Copy(blockData, blockHeaderSize, data, dataReadIndex, chunksConsumed);
+                Array.Copy(BlockBuffer, blockHeaderSize, data, dataReadIndex, chunksConsumed);
                 dataReadIndex += chunksConsumed;
                 remainingBytes -= chunksConsumed;
                 block = nextBlock;
