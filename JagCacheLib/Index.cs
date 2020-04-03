@@ -27,7 +27,7 @@ namespace JagCacheLib
 
         public const byte Size = 6;
 
-        public static readonly byte[] Buffer = new byte[Size];
+        private static readonly byte[] Buffer = new byte[Size];
 
         public double Id { get; }
 
