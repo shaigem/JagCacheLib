@@ -27,6 +27,8 @@ namespace JagCacheLib
 
         public const byte Size = 6;
 
+        public static readonly byte[] Buffer = new byte[Size];
+
         public double Id { get; }
 
         public FileStream IndexFileStream { get; }
@@ -36,12 +38,16 @@ namespace JagCacheLib
         public IndexEntry GetEntry(int entryId)
         {
             var pointer = entryId * Size;
-            // TODO check if the pointer is >= the index's size
-            var buffer = new byte[Size];
             IndexFileStream.Seek(pointer, SeekOrigin.Begin);
-            IndexFileStream.Read(buffer, 0, buffer.Length);
-            int size = (buffer[0] << 16) | (buffer[1] << 8) | buffer[2];
-            int offset = (buffer[3] << 16) | (buffer[4] << 8) | buffer[5];
+            var read = IndexFileStream.Read(Buffer);
+
+            if (read == 0)
+            {
+                throw new Exception($"Index entry {entryId} does not exist in the cache.");
+            }
+
+            int size = (Buffer[0] << 16) | (Buffer[1] << 8) | Buffer[2];
+            int offset = (Buffer[3] << 16) | (Buffer[4] << 8) | Buffer[5];
             return new IndexEntry(entryId, size, offset);
         }
 
