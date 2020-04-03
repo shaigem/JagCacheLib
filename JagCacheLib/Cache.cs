@@ -133,7 +133,13 @@ namespace JagCacheLib
                 if (remainingBytes <= 0) continue;
 
                 _mainDataFileStream.Seek(block * TotalBlockSize, SeekOrigin.Begin);
-                _mainDataFileStream.Read(BlockBuffer);
+                var read = _mainDataFileStream.Read(BlockBuffer);
+                if (read == 0)
+                {
+                    throw new Exception(
+                        $"Reached the end of file while trying to read the data block position of {block}.");
+                }
+
                 var (nextEntryId, nextSequence, nextBlock, nextIndexId) =
                     new BlockHeader(BlockBufferSpan.Slice(0, blockHeaderSize), large);
                 if (nextEntryId != file)
@@ -149,6 +155,11 @@ namespace JagCacheLib
                 if (nextIndexId != type)
                 {
                     throw new Exception($"Sector data mismatch. Next index id should be {type}.");
+                }
+
+                if (nextBlock < 0)
+                {
+                    throw new Exception($"Invalid next block position of {nextBlock}.");
                 }
 
                 var chunksConsumed = Math.Min(remainingBytes, blockChunkSize);
