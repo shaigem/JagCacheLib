@@ -24,9 +24,9 @@ namespace JagCacheLib
         private readonly Index _mainDescriptorIndex;
         private readonly Index?[] _indices;
 
-        private readonly struct Header
+        private readonly struct BlockHeader
         {
-            public Header(byte[] data, bool large)
+            public BlockHeader(byte[] data, bool large)
             {
                 if (data.Length == 0)
                 {
@@ -138,7 +138,7 @@ namespace JagCacheLib
                 }
 
                 var (nextEntryId, nextSequence, nextBlock, nextIndexId) =
-                    new Header(headerData, large);
+                    new BlockHeader(headerData, large);
                 if (nextEntryId != file)
                 {
                     throw new Exception($"Sector data mismatch. Next entry id should be {file}.");
