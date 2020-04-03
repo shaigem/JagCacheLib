@@ -149,9 +149,9 @@ namespace JagCacheLib
                     throw new Exception($"Sector data mismatch. Next sequence should be {currentSequence}.");
                 }
 
-                if (nextIndexId != type + 1)
+                if (nextIndexId != type)
                 {
-                    throw new Exception($"Sector data mismatch. Next index id should be {type + 1}.");
+                    throw new Exception($"Sector data mismatch. Next index id should be {type}.");
                 }
 
                 var chunksConsumed = Math.Min(remainingBytes, blockChunkSize);
