@@ -7,7 +7,7 @@ namespace JagCacheLib
     public ref struct SpanReader
     {
         private readonly byte[] _backingData;
-        private readonly Span<byte> BackingDataSpan => _backingData;
+        private readonly ReadOnlySpan<byte> BackingDataSpan => _backingData;
 
         public int Offset { get; private set; }
 
