@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.IO.Compression;
 using Ionic.BZip2;
 
 namespace JagCacheLib
@@ -7,41 +8,46 @@ namespace JagCacheLib
     public enum CompressionType
     {
         None = 0,
-        Bzip2 = 1
+        Bzip2 = 1,
+        Gzip = 2
     }
 
     public static class CompressionHelper
     {
+        private const byte Bzip2HeaderLength = 4;
         private static ReadOnlySpan<byte> Bzip2Header => new[] {(byte) 'B', (byte) 'Z', (byte) 'h', (byte) '1'};
 
-        public static byte[] DecompressBzip2(ReadOnlySpan<byte> data, int uncompressedLength)
+        public static byte[] DecompressBzip2(ReadOnlySpan<byte> compressedDataNoHeader, int uncompressedLength)
         {
-            var dataToDecompress = new Span<byte>(new byte[data.Length + Bzip2Header.Length]);
-
-            Bzip2Header.CopyTo(dataToDecompress);
-            data.CopyTo(dataToDecompress.Slice(Bzip2Header.Length));
-
-            using var inputStream = new MemoryStream(data.Length);
-            inputStream.Write(dataToDecompress);
+            var compressedDataLengthNoHeader = compressedDataNoHeader.Length;
+            var compressedDataWithHeader = new byte[compressedDataLengthNoHeader + Bzip2HeaderLength];
+            var compressedDataWithHeaderSpan = compressedDataWithHeader.AsSpan();
+            Bzip2Header.CopyTo(compressedDataWithHeaderSpan);
+            compressedDataNoHeader.CopyTo(compressedDataWithHeaderSpan.Slice(Bzip2HeaderLength));
+            using var inputStream = new MemoryStream(compressedDataLengthNoHeader);
+            inputStream.Write(compressedDataWithHeaderSpan);
             inputStream.Position = 0;
-
-            //| SpanReader | 10 | 137.4 ms | 0.42 ms | 0.37 ms |    1 | 3750.0000 | 3250.0000 | 3250.0000 |  13.08 MB |
-            //| SpanReader | 10 | 131.8 ms | 0.28 ms | 0.25 ms |    1 | 3500.0000 | 3000.0000 | 3000.0000 |  13.04 MB |
-
             using var bzipInputStream = new BZip2InputStream(inputStream);
             var uncompressedData = new byte[uncompressedLength];
             bzipInputStream.Read(uncompressedData);
+            return uncompressedData;
+        }
 
+        public static byte[] DecompressGzip(ReadOnlySpan<byte> compressedDataNoHeader, int uncompressedLength)
+        {
+            var compressedDataLengthNoHeader = compressedDataNoHeader.Length;
+            using var inputStream = new MemoryStream(compressedDataLengthNoHeader);
+            inputStream.Write(compressedDataNoHeader);
+            inputStream.Position = 0;
+            using var gzipInputStream = new GZipStream(inputStream, CompressionMode.Decompress);
+            var uncompressedData = new byte[uncompressedLength];
+            gzipInputStream.Read(uncompressedData);
             return uncompressedData;
         }
     }
 
-
-    public readonly ref struct Container
+    public class Container
     {
-        public byte[] Data { get; }
-
-
         public Container(byte[] data)
         {
             var reader = new SpanReader(data);
@@ -54,16 +60,16 @@ namespace JagCacheLib
 
             var uncompressedLength = compressionType == CompressionType.None ? length : reader.ReadInt32BigEndian();
 
-            var dataSlice = reader.ReadSlice(length);
-
-            dataSlice = compressionType switch
+            Data = compressionType switch
             {
-                CompressionType.None => dataSlice,
-                CompressionType.Bzip2 => CompressionHelper.DecompressBzip2(dataSlice, uncompressedLength),
+                CompressionType.None => reader.ReadSlice(length).ToArray(),
+                CompressionType.Bzip2 =>
+                CompressionHelper.DecompressBzip2(reader.ReadSlice(length), uncompressedLength),
+                CompressionType.Gzip => CompressionHelper.DecompressGzip(reader.ReadSlice(length), uncompressedLength),
                 _ => throw new ArgumentException($"Invalid compression type of {compressionType}.")
             };
-
-            Data = dataSlice.ToArray();
         }
+
+        public byte[] Data { get; }
     }
 }
