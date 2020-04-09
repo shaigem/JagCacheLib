@@ -5,9 +5,10 @@
         <LangVersion>8</LangVersion>
         <Nullable>enable</Nullable>
         <WarningsAsErrors>nullable</WarningsAsErrors>
+        <Authors>Ronnie Tran</Authors>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="DotNetZip" Version="1.13.7" />
+        <PackageReference Include="DotNetZip" Version="1.13.7" />
     </ItemGroup>
 </Project>
